@@ -19,7 +19,6 @@ describe('POST /api/html', () => {
             expect(res.body.tags).toBeDefined();
         });
     });
-
     describe('given `body.html` with no tags', () => {
         // ARRANGE
         const html = 'no tags here';
@@ -33,7 +32,6 @@ describe('POST /api/html', () => {
             expect(res.body.message).toBe('HTML contains no tags');
         });
     });
-
     describe('given `body.html` with unclosed tags', () => {
         // ARRANGE
         const html: string = '<html><head></head>';
@@ -47,7 +45,6 @@ describe('POST /api/html', () => {
             expect(res.body.message).toBe('All tags must be closed');
         });
     });
-
     describe('given a valid html file upload', () => {
         // ARRANGE
         const buffer: Buffer = Buffer.from('<html><head></head><body></body></html>');
@@ -63,6 +60,4 @@ describe('POST /api/html', () => {
             expect(res.body.tags).toBeDefined();
         });
     });
-
-
 });
