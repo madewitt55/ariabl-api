@@ -5,7 +5,7 @@
   "main": "src/app.ts",
   "scripts": {
     "dev": "tsx watch src/app.ts",
-    "test": "jest"
+    "test": "node --experimental-vm-modules node_modules/jest-cli/bin/jest.js"
   },
   "keywords": [],
   "author": "",
@@ -13,9 +13,12 @@
   "type": "module",
   "devDependencies": {
     "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
     "@types/multer": "^2.1.0",
     "@types/node": "^25.5.0",
     "jest": "^30.3.0",
+    "ts-jest": "^29.4.9",
+    "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2"
   },

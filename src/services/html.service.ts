@@ -4,7 +4,7 @@ import { parse } from 'node-html-parser';
 const VOID_ELEMENTS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
 
 export type Tag = {
-    tag: string;
+    name: string;
     isVoid: boolean;
     isClosed: boolean;
 };
@@ -18,13 +18,13 @@ export type Tag = {
 export function parseHtmlTags(html: string): Tag[] {
     const root = parse(html);
     return root.querySelectorAll('*').map(node => {
-        const tag = node.tagName.toLowerCase();
+        const name = node.tagName.toLowerCase();
         let isClosed: boolean = true; // Void tags are 'closed' by default
-        const isVoid: boolean = VOID_ELEMENTS.has(tag);
+        const isVoid: boolean = VOID_ELEMENTS.has(name);
         if (!isVoid) {
-            isClosed = html.includes(`</${tag}>`);
+            isClosed = html.includes(`</${name}>`);
         }
 
-        return { tag, isVoid, isClosed };
+        return { name, isVoid, isClosed };
     });
 }
