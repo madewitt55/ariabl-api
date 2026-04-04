@@ -1,3 +1,13 @@
 import express from 'express';
+import routes from './routes';
+import config from 'config';
 
-console.log('hello world');
+const PORT = config.get<number>('port');
+
+const app = express();
+app.use(express.json());
+routes(app);
+
+app.listen(PORT, async () => {
+    console.log(`App listening on port ${PORT}`);
+});
