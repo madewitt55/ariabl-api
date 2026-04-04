@@ -6,6 +6,8 @@ import { parseHtmlTags, type Tag } from '../services/html.service';
 /**
  * Handler for uploading HTML
  * 
+ * POST /api/html
+ * 
  * @param {TypedRequest<UploadHtmlRequest>} req - Validated request
  * @param {Response} res - Response to be returned
  * @returns {Response} Returns an HTTP response:
@@ -23,7 +25,7 @@ export function uploadHtmlHandler(req: TypedRequest<UploadHtmlRequest>, res: Res
             message: 'HTML contains no tags'
         });
     }
-    // If html contains any closed tags
+    // If html contains any unclosed tags
     if (tags.some((t: Tag) => !t.isClosed)) {
         return res.status(400).send({
             tags,
