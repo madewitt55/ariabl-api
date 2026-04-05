@@ -1,0 +1,2 @@
+# Testing
+Testing is incredibly important for any software project, but especially an organized, data-oriented REST API. For this project, I will be using the testing framework `jest`. Jest is a unit testing framework that uses blocks such as `describe` and `it` to clearly define test structure. All unit tests can be found in the `__tests__` folder in the root directory

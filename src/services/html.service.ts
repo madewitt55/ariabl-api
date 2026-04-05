@@ -7,7 +7,7 @@ export type Tag = {
     tagName: string; // ex. h1, h2, div
     innerText: string; // ex. <h1> INNER TEXT </h1>
     attributes: Record<string, string>; // ex. <h1 attr="attr"></h1>
-    error: 'UNCLOSED' | 'SELF_CLOSING' | 'NOT_SELF_CLOSING' | 'OPRHANED_CLOSER' | null;
+    error: 'UNCLOSED' | 'SELF_CLOSING' | 'NOT_SELF_CLOSING' | 'OPRHANED_CLOSE' | null;
 };
 
 /**
@@ -34,14 +34,6 @@ export function parseHtmlTags(html: string) {
             }
             const rawTag: string = html.slice(parser.startIndex, parser.endIndex + 1);
             const isSelfClosing: boolean = rawTag.endsWith('/>');
-            const isOrphanedCloser: boolean = rawTag.startsWith('</');
-
-            if (isOrphanedCloser) {
-                // Orphaned closer, do not add to stack
-                tag.error = 'OPRHANED_CLOSER';
-                tags.push(tag);
-                return;
-            }
 
             if (VOID_ELEMENTS.has(name)) {
                 if (!isSelfClosing) {
@@ -69,18 +61,20 @@ export function parseHtmlTags(html: string) {
             }
         },
         // Runs for each close tag
-        onclosetag(name: string, isImplied: boolean) {
+        onclosetag(name: string) {
             if (VOID_ELEMENTS.has(name)) return;
 
             const topStack: Tag | undefined = stack.pop();
             if (topStack) {
-                if (topStack.tagName !== name || isImplied) {
-                    // Close tag does not match most recent open tag
+                if (topStack.tagName !== name) {
                     topStack.error = 'UNCLOSED';
                 }
+            } else {
+                // No corresponding opening tag: orphaned close
+                tags.push({ tagName: name, innerText: '', attributes: {}, error: 'OPRHANED_CLOSE' });
             }
         }
-    });
+    }, { xmlMode: true });
 
     parser.write(html);
     parser.end();
