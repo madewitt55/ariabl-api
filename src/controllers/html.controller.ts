@@ -13,8 +13,17 @@ import { parseHtmlTags, type Tag } from '../services/html.service';
  * - `200` with parsed tags if HTML is structurally valid
  */
 export function uploadHtmlHandler(req: TypedRequest<UploadHtmlRequest>, res: Response): Response {
+    // Serialize HTML file; if no file in req, use pre-serialized HTML from body
     const html: string = req.file ? req.file!.buffer.toString('utf-8') : req.body!.html;
-    const tags: Tag[] = parseHtmlTags(html);
+
+    const tags: Tag[] = parseHtmlTags(html); // Parse tags
+    if (tags.some((tag: Tag) => tag.error)) {
+        // Errors are present in HTML, send data back
+        return res.status(400).send({
+            tags,
+            message: 'HTML contains errors'
+        });
+    }
 
     return res.status(200).json({ tags });
 }
