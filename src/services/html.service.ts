@@ -15,8 +15,10 @@ export type Tag = {
 /**
  * Parses serailized HTML `html` and returns an array of tags and their information
  * 
- * Every open tag and self-closing tag is added to the array. Orphaned closers are
- * also added, tagged with their respective error
+ * Every open tag and self-closing tag is added to the array
+ * 
+ * Errors on tags are flagged. Orphaned close tags are no longer added and flagged
+ * with an error
  * 
  * @param html {string} - Serialized HTML
  * @returns {Tag[]} returns an array of `html`'s tags in order
@@ -30,7 +32,6 @@ export function parseHtmlTags(html: string) {
         // Runs for each open tag
         onopentag(name: string, attribs: Record<string, string>) {
             const parent: Tag | undefined = stack.at(-1);
-            console.log(parent)
             if (parent) {
                 if (VOID_ELEMENTS.has(parent.tagName)) {
                     // Void element has child or children

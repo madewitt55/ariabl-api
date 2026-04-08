@@ -16,7 +16,9 @@ function validateResource(schema: ZodObject) {
         }
         catch (e: any) {
             // Request failed validation
-            return res.status(400).send(e.issues);
+            return res.status(400).send({
+                message: e.issues[0].message
+            });
         }
     };
 }
