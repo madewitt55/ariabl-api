@@ -9,7 +9,8 @@ import { parseHtmlTags, type Tag } from '../services/html.service';
  * @param {TypedRequest<UploadHtmlRequest>} req - Validated request
  * @param {Response} res - Response to be returned
  * @returns {Response} Returns an HTTP response:
- * - `200` with parsed tags if HTML is structurally valid
+ * - `200` with parsed tags if `body.html` contains tags
+ * - `400` if `body.html` does not contain tags
  */
 export function uploadHtmlHandler(req: TypedRequest<UploadHtmlRequest>, res: Response): Response {
     const html: string = req.body.html;

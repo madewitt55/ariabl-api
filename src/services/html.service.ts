@@ -8,63 +8,64 @@ export type Tag = {
     tagName: string; // ex. h1, h2, div
     innerText: string; // ex. <h1> INNER TEXT </h1>
     attributes: Record<string, string>; // ex. <h1 attr="attr"></h1>
-    parentId: number | null;
-    error: 'UNCLOSED' | 'CLOSED' | 'SELF_CLOSING' | 'HAS_CHILDREN' | 'HAS_TEXT' | null;
+    children: Tag[];
+    error: 'CLOSED' | 'UNCLOSED' | 'SELF_CLOSING' | 'NOT_SELF_CLOSING' | null;
 };
 
 /**
- * Parses serailized HTML `html` and returns an array of tags and their information
+ * Parses serailized HTML `html` and returns an array of root tags,
+ * each with an array of their children
  * 
- * Every open tag and self-closing tag is added to the array
+ * Every open tag and self-closing tag is parsed
  * 
  * Errors on tags are flagged. Orphaned close tags are no longer added and flagged
  * with an error
  * 
  * @param html {string} - Serialized HTML
- * @returns {Tag[]} returns an array of `html`'s tags in order
+ * @returns {Tag[]} returns an array of `html`'s root tags in order
  */
 export function parseHtmlTags(html: string) {
     const stack: Tag[] = [];
-    const tags: Tag[] = [];
+    const roots: Tag[] = [];
 
     let id: number = 0;
     const parser = new Parser({
         // Runs for each open tag
         onopentag(name: string, attribs: Record<string, string>) {
-            const parent: Tag | undefined = stack.at(-1);
-            if (parent) {
-                if (VOID_ELEMENTS.has(parent.tagName)) {
-                    // Void element has child or children
-                    parent.error = 'HAS_CHILDREN';
-                }
-            }
-
             const tag: Tag = {
                 id: id++,
                 tagName: name,
                 innerText: '',
                 attributes: attribs,
-                parentId: parent ? parent.id : null,
+                children: [],
                 error: null
             }
+
+            const parent: Tag | undefined = stack.at(-1);
+
             const rawTag: string = html.slice(parser.startIndex, parser.endIndex + 1);
             const isSelfClosing: boolean = rawTag.endsWith('/>');
 
-            if (!VOID_ELEMENTS.has(name)) {
+            // Void element not self closing
+            if (VOID_ELEMENTS.has(name)) {
+                if (!isSelfClosing) {
+                    tag.error = 'NOT_SELF_CLOSING';
+                }
+
+                stack.push(tag);
+            }
+            // Non-void element self closing
+            else {
                 if (isSelfClosing) {
-                    // Non-void tag closes itself
                     tag.error = 'SELF_CLOSING';
                 }
                 else {
-                    // Push tag to stack and array
                     stack.push(tag);
-                    tags.push(tag);
                 }
             }
-            else {
-                stack.push(tag);
-                tags.push(tag);
-            }
+
+            if (parent) parent.children.push(tag);
+            else roots.push(tag);
         },
         // Runs for each segment of text
         ontext(text: string) {
@@ -72,9 +73,6 @@ export function parseHtmlTags(html: string) {
             if (parent) {
                 // Add text to parent tag
                 parent.innerText += text;
-                if (VOID_ELEMENTS.has(parent.tagName)) {
-                    parent.error = 'HAS_TEXT';
-                }
             }
         },
         // Runs for each close tag
@@ -82,23 +80,15 @@ export function parseHtmlTags(html: string) {
             const topStack: Tag | undefined = stack.pop();
 
             if (topStack) {
-                if (VOID_ELEMENTS.has(name)) {
-                    // Void tag
-                    if (isImplied) {
-                        // Implied close, remove error and innerText
-                        topStack.error = null;
-                        topStack.innerText = '';
-                    }
-                    else {
-                        // Nonimplied close, attach error
+                if (VOID_ELEMENTS.has(topStack.tagName)) {
+                    if (!isImplied) {
                         topStack.error = 'CLOSED';
                     }
-
-                    return;
                 }
-
-                if (topStack.tagName !== name || isImplied) {
-                    topStack.error = 'UNCLOSED';
+                else {
+                    if (topStack.tagName !== name || isImplied) {
+                        topStack.error = 'UNCLOSED';
+                    }
                 }
             }
         }
@@ -107,5 +97,5 @@ export function parseHtmlTags(html: string) {
     parser.write(html);
     parser.end();
 
-    return tags;
+    return roots;
 }
