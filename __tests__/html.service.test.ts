@@ -2,81 +2,95 @@ import {parseHtmlTags, type Tag} from '../src/services/html.service';
 
 describe('HTML SERVICE', () => {
     describe('FUNCTION parseHtmlTags', () => {
-        describe('given valid `html`', () => {
+        describe('given valid `html` with root tags', () => {
             // ARRANGE
-            const tagNames: string[] = ['html', 'head'];
-            const numTags: number = 2;
-            const html: string = `<html><head></head></html>`;
+            const html: string = `<head></head><body></body>`;
 
-            it('should return array `tags` where `tags[i].error` is `null` for all `i`', () => {
+            it('should return array `tags` with the root tags', () => {
                 // ACT
                 const tags: Tag[] = parseHtmlTags(html);
 
                 // ASSERT
-                expect(tags.some((t: Tag) => t.error)).toBe(false);
+                expect(tags.length).toBe(2);
             });
-
-            it('should return array `tags` with all tags included', () => {
+            it('should return array `tags` where `tags[i].children` is empty for all `i`', () => {
                 // ACT
                 const tags: Tag[] = parseHtmlTags(html);
 
-                // ASSSERT
-                expect(tags.length).toBe(numTags);
-                tagNames.forEach((tagName: string) => {
-                    expect(tags.some((tag: Tag) => tag.tagName === tagName)).toBe(true);
+                // ASSERT
+                tags.forEach((tag: Tag) => {
+                    expect(tag.children.length).toBe(0);
                 });
             });
         });
-        describe('given `html` with an unclosed tag', () => {
+        describe('given `html` with nested tags', () => {
             // ARRANGE
-            const html: string = `<html><head></head>`;
-            const unclosedIndex: number = 0;
+            const html: string = `
+                <html>
+                    <head>
+                        <h1></h1>
+                    </head>
+                </html>`;
+            const numTotalChildren: number = 2;
+            const numDirectChildren: number = 1;
 
-            it('should return array `tags` where `tags[i].error` is `UNCLOSED_TAG` for index `i` of unclosed tag', () => {
+            it('should return array `tags` where `tags[i].children` contains all direct child tags for any `i`', () => {
                 // ACT
                 const tags: Tag[] = parseHtmlTags(html);
+                console.log(tags)
 
                 // ASSERT
-                expect(tags[unclosedIndex]?.error).toBe('UNCLOSED');
+                expect(tags[0]?.children.length).toBe(numDirectChildren);
             });
-        });
-        describe('given `html` with an orphaned close tag', () => {
-            // ARRANGE
-            const html: string = `<html></head></html>`;
-            const orphanedIndex: number = 1;
-
-            it('should return array `tags` where `tags[i].error` is `OPRHANED_CLOSE` for index `i` of orphaned close tag', () => {
+            it('should return array `tags` where all tags are included in the nested structure', () => {
                 // ACT
                 const tags: Tag[] = parseHtmlTags(html);
 
                 // ASSERT
-                expect(tags[orphanedIndex]?.error).toBe('ORPHANED_CLOSE');
+                tags[0]?.children.forEach((child: Tag) => {
+                    const countAllChildren = (tag: Tag): number =>
+                        tag.children.length + tag.children.reduce((sum, c) => sum + countAllChildren(c), 0);
+                    expect(countAllChildren(child) + 1).toBe(numTotalChildren);
+                });
             });
         });
         describe('given `html` with a self-closing non-void tag', () => {
             // ARRANGE
-            const html: string = `<html><head/></html>`;
-            const selfClosingIndex: number = 1;
+            const html: string = `<html/>`;
+            const error: string = 'SELF_CLOSING';
 
-            it('should return array `tags` where `tags[i].error` is `SELF_CLOSING` for index `i` of self-closing tag', () => {
+            it('should return array `tags` where the self closing tag contains the attached error', () => {
                 // ACT
                 const tags: Tag[] = parseHtmlTags(html);
 
                 // ASSERT
-                expect(tags[selfClosingIndex]?.error).toBe('SELF_CLOSING');
+                expect(tags[0]?.error).toBe(error);
             });
         });
-        describe('given `html` with a non-self-closing void tag', () => {
+        describe('given `html` with a self-closing non-void tag', () => {
             // ARRANGE
-            const html: string = `<html><br></br></html>`;
-            const nonSelfClosingIndex: number = 1;
+            const html: string = `<meta>`;
+            const error: string = 'NOT_SELF_CLOSING';
 
-            it('should return array `tags` where `tags[i].error` is `NOT_SELF_CLOSING` for index `i` of non-self-closing tag', () => {
+            it('should return array `tags` where the void tag contains the attached error', () => {
                 // ACT
                 const tags: Tag[] = parseHtmlTags(html);
 
                 // ASSERT
-                expect(tags[nonSelfClosingIndex]?.error).toBe('NOT_SELF_CLOSING');
+                expect(tags[0]?.error).toBe(error);
+            });
+        });
+        describe('given `html` with an unclosed non-void tag', () => {
+            // ARRANGE
+            const html: string = `<html>`;
+            const error: string = 'UNCLOSED';
+
+            it('should return array `tags` where the unclosed tag contains the attached error', () => {
+                // ACT
+                const tags: Tag[] = parseHtmlTags(html);
+
+                // ASSERT
+                expect(tags[0]?.error).toBe(error);
             });
         });
         describe('given `html` containing no tags', () => {

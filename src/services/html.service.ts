@@ -9,7 +9,7 @@ export type Tag = {
     innerText: string; // ex. <h1> INNER TEXT </h1>
     attributes: Record<string, string>; // ex. <h1 attr="attr"></h1>
     children: Tag[];
-    error: 'CLOSED' | 'UNCLOSED' | 'SELF_CLOSING' | 'NOT_SELF_CLOSING' | null;
+    error: 'UNCLOSED' | 'SELF_CLOSING' | 'NOT_SELF_CLOSING' | null;
 };
 
 /**
@@ -51,7 +51,6 @@ export function parseHtmlTags(html: string) {
                 if (!isSelfClosing) {
                     tag.error = 'NOT_SELF_CLOSING';
                 }
-                stack.push(tag);
             }
             // Non-void element self closing
             else {
@@ -63,16 +62,8 @@ export function parseHtmlTags(html: string) {
                 }
             }
 
-            if (parent) {
-                if (VOID_ELEMENTS.has(parent.tagName)) {
-                    parent = stack[stack.length-3];
-                    if (parent) parent.children.push(tag);
-                    else roots.push(tag);
-                }
-            }
-            else {
-                roots.push(tag);
-            }
+            if (parent) parent.children.push(tag);
+            else roots.push(tag);
         },
         // Runs for each segment of text
         ontext(text: string) {
@@ -84,18 +75,12 @@ export function parseHtmlTags(html: string) {
         },
         // Runs for each close tag
         onclosetag(name: string, isImplied: boolean) {
-            const topStack: Tag | undefined = stack.pop();
+            if (VOID_ELEMENTS.has(name)) return;
 
+            const topStack: Tag | undefined = stack.pop();
             if (topStack) {
-                if (VOID_ELEMENTS.has(topStack.tagName)) {
-                    if (!isImplied) {
-                        topStack.error = 'CLOSED';
-                    }
-                }
-                else {
-                    if (topStack.tagName !== name || isImplied) {
-                        topStack.error = 'UNCLOSED';
-                    }
+                if (topStack.tagName !== name || isImplied) {
+                    topStack.error = 'UNCLOSED';
                 }
             }
         }

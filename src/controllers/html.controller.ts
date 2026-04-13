@@ -18,6 +18,7 @@ export function uploadHtmlHandler(req: TypedRequest<UploadHtmlRequest>, res: Res
     const tags: Tag[] = parseHtmlTags(html); // Parse tags
     if (!tags.length) {
         return res.status(400).send({
+            tags,
             message: 'html contains no tags'
         });
     }
