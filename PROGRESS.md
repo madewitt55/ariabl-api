@@ -1,0 +1,2 @@
+# Progress
+This week, I tweaked the parseHtmlTags to work in a more efficient way and make it easier for the client to display tag structure. I began developing the client (see other repository), creating an upload form and a visually pleasing display of each tag and it's information. I also added an action panel, with the ability to go back and revise your code and a button to proceed to AI optimization (not yet functional).

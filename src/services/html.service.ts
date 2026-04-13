@@ -41,7 +41,7 @@ export function parseHtmlTags(html: string) {
                 error: null
             }
 
-            const parent: Tag | undefined = stack.at(-1);
+            let parent: Tag | undefined = stack.at(-1);
 
             const rawTag: string = html.slice(parser.startIndex, parser.endIndex + 1);
             const isSelfClosing: boolean = rawTag.endsWith('/>');
@@ -51,7 +51,6 @@ export function parseHtmlTags(html: string) {
                 if (!isSelfClosing) {
                     tag.error = 'NOT_SELF_CLOSING';
                 }
-
                 stack.push(tag);
             }
             // Non-void element self closing
@@ -64,8 +63,16 @@ export function parseHtmlTags(html: string) {
                 }
             }
 
-            if (parent) parent.children.push(tag);
-            else roots.push(tag);
+            if (parent) {
+                if (VOID_ELEMENTS.has(parent.tagName)) {
+                    parent = stack[stack.length-3];
+                    if (parent) parent.children.push(tag);
+                    else roots.push(tag);
+                }
+            }
+            else {
+                roots.push(tag);
+            }
         },
         // Runs for each segment of text
         ontext(text: string) {
