@@ -1,5 +1,7 @@
 import {parseHtmlTags, type Tag} from '../src/services/html.service';
 
+const childTags = (tag: Tag): Tag[] => tag.content.filter((c): c is Tag => typeof c !== 'string');
+
 describe('HTML SERVICE', () => {
     describe('FUNCTION parseHtmlTags', () => {
         describe('given valid `html` with root tags', () => {
@@ -13,13 +15,13 @@ describe('HTML SERVICE', () => {
                 // ASSERT
                 expect(tags.length).toBe(2);
             });
-            it('should return array `tags` where `tags[i].children` is empty for all `i`', () => {
+            it('should return array `tags` where `tags[i].content` has no child tags for all `i`', () => {
                 // ACT
                 const tags: Tag[] = parseHtmlTags(html);
 
                 // ASSERT
                 tags.forEach((tag: Tag) => {
-                    expect(tag.children.length).toBe(0);
+                    expect(childTags(tag).length).toBe(0);
                 });
             });
         });
@@ -34,22 +36,21 @@ describe('HTML SERVICE', () => {
             const numTotalChildren: number = 2;
             const numDirectChildren: number = 1;
 
-            it('should return array `tags` where `tags[i].children` contains all direct child tags for any `i`', () => {
+            it('should return array `tags` where `tags[i].content` contains all direct child tags for any `i`', () => {
                 // ACT
                 const tags: Tag[] = parseHtmlTags(html);
-                console.log(tags)
 
                 // ASSERT
-                expect(tags[0]?.children.length).toBe(numDirectChildren);
+                expect(childTags(tags[0]!).length).toBe(numDirectChildren);
             });
             it('should return array `tags` where all tags are included in the nested structure', () => {
                 // ACT
                 const tags: Tag[] = parseHtmlTags(html);
 
                 // ASSERT
-                tags[0]?.children.forEach((child: Tag) => {
+                childTags(tags[0]!).forEach((child: Tag) => {
                     const countAllChildren = (tag: Tag): number =>
-                        tag.children.length + tag.children.reduce((sum, c) => sum + countAllChildren(c), 0);
+                        childTags(tag).length + childTags(tag).reduce((sum, c) => sum + countAllChildren(c), 0);
                     expect(countAllChildren(child) + 1).toBe(numTotalChildren);
                 });
             });

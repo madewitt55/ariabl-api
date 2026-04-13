@@ -1,30 +1,35 @@
 import { Parser } from 'htmlparser2';
 
 // Void elements can not have children and only consist of an open tag
-const VOID_ELEMENTS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
+export const VOID_ELEMENTS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
 
 export type Tag = {
     id: number;
-    tagName: string; // ex. h1, h2, div
-    innerText: string; // ex. <h1> INNER TEXT </h1>
-    attributes: Record<string, string>; // ex. <h1 attr="attr"></h1>
-    children: Tag[];
+    tagName: string;
+    attributes: Record<string, string>;
+    content: Array<string | Tag>; // ordered text nodes and child tags
     error: 'UNCLOSED' | 'SELF_CLOSING' | 'NOT_SELF_CLOSING' | null;
 };
 
-/**
- * Parses serailized HTML `html` and returns an array of root tags,
- * each with an array of their children
- * 
- * Every open tag and self-closing tag is parsed
- * 
- * Errors on tags are flagged. Orphaned close tags are no longer added and flagged
- * with an error
- * 
- * @param html {string} - Serialized HTML
- * @returns {Tag[]} returns an array of `html`'s root tags in order
- */
-export function parseHtmlTags(html: string) {
+export function serializeTags(tags: Tag[]): string {
+    return tags.map(serializeTag).join('');
+}
+
+function serializeTag(tag: Tag): string {
+    const attrStr = Object.entries(tag.attributes)
+        .map(([key, value]) => value ? `${key}="${value}"` : key)
+        .join(' ');
+    const opening = `<${tag.tagName}${attrStr ? ' ' + attrStr : ''}>`;
+
+    if (VOID_ELEMENTS.has(tag.tagName)) return opening;
+
+    const body = tag.content
+        .map(c => typeof c === 'string' ? c : serializeTag(c))
+        .join('');
+    return `${opening}${body}</${tag.tagName}>`;
+}
+
+export function parseHtmlTags(html: string): Tag[] {
     const stack: Tag[] = [];
     const roots: Tag[] = [];
 
@@ -35,9 +40,8 @@ export function parseHtmlTags(html: string) {
             const tag: Tag = {
                 id: id++,
                 tagName: name,
-                innerText: '',
                 attributes: attribs,
-                children: [],
+                content: [],
                 error: null
             }
 
@@ -62,15 +66,14 @@ export function parseHtmlTags(html: string) {
                 }
             }
 
-            if (parent) parent.children.push(tag);
+            if (parent) parent.content.push(tag);
             else roots.push(tag);
         },
         // Runs for each segment of text
         ontext(text: string) {
             const parent: Tag | undefined = stack.at(-1);
             if (parent) {
-                // Add text to parent tag
-                parent.innerText += text;
+                parent.content.push(text);
             }
         },
         // Runs for each close tag

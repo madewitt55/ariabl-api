@@ -2,6 +2,7 @@ import type { Response } from 'express';
 import type { TypedRequest } from '../utils/typed_request';
 import type { UploadHtmlRequest } from '../schema/html.schema';
 import { parseHtmlTags, type Tag } from '../services/html.service';
+import { serializeTags } from '../services/html.service';
 
 /**
  * Handler for uploading HTML
@@ -12,7 +13,7 @@ import { parseHtmlTags, type Tag } from '../services/html.service';
  * - `200` with parsed tags if `body.html` contains tags
  * - `400` if `body.html` does not contain tags
  */
-export function uploadHtmlHandler(req: TypedRequest<UploadHtmlRequest>, res: Response): Response {
+export function uploadHtmlHandler(req: TypedRequest<UploadHtmlRequest>, res: Response): any {
     const html: string = req.body.html;
 
     const tags: Tag[] = parseHtmlTags(html); // Parse tags
@@ -25,6 +26,8 @@ export function uploadHtmlHandler(req: TypedRequest<UploadHtmlRequest>, res: Res
 
     return res.status(200).send({ 
         tags,
+        modifiedTags: tags,
+        modifiedHtml: serializeTags(tags),
         message: 'Tags parsed successfully'
     });
 }
