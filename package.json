@@ -4,7 +4,7 @@
   "description": "",
   "main": "src/app.ts",
   "scripts": {
-    "dev": "tsx watch src/app.ts",
+    "dev": "tsx watch --env-file=.env src/app.ts",
     "test": "node --experimental-vm-modules node_modules/jest-cli/bin/jest.js"
   },
   "keywords": [],
@@ -26,6 +26,8 @@
     "typescript": "^6.0.2"
   },
   "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.114",
+    "@anthropic-ai/sdk": "^0.90.0",
     "config": "^4.4.1",
     "cors": "^2.8.6",
     "express": "^5.2.1",
