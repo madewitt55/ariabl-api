@@ -1,13 +1,14 @@
 import { Router } from 'express';
-import { uploadHtmlHandler } from './controllers/html.controller.js';
+import { parseHtmlHandler } from './controllers/html.controller.js';
 import validateResource from './middleware/validate_resource.js';
-import { uploadHtmlSchema } from './schema/html.schema.js';
-import { serializeTagsSchema } from './schema/tag.schema.js';
-import { serializeTagsHandler } from './controllers/tag.controller.js';
+import { parseHtmlSchema } from './schema/html.schema.js';
+import { restructureTagsSchema, serializeTagsSchema } from './schema/tag.schema.js';
+import { restructureTagsHandler, serializeTagsHandler } from './controllers/tag.controller.js';
 
 const router = Router();
 
-router.post('/html', validateResource(uploadHtmlSchema), uploadHtmlHandler);
+router.post('/html/parse', validateResource(parseHtmlSchema), parseHtmlHandler);
 router.post('/tags/serialize', validateResource(serializeTagsSchema), serializeTagsHandler);
+router.post('/tags/restructure', validateResource(restructureTagsSchema), restructureTagsHandler);
 
 export default router;

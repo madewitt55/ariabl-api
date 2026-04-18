@@ -1,9 +1,9 @@
 import { z, object, string } from 'zod';
 
-export const uploadHtmlSchema = object({
+export const parseHtmlSchema = object({
     body: object({
         html: string('html is required').min(1)
     }).strict()
 });
 
-export type UploadHtmlRequest = z.infer<typeof uploadHtmlSchema>;
+export type ParseHtmlRequest = z.infer<typeof parseHtmlSchema>;
