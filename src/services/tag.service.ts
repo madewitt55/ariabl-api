@@ -1,7 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { type Tag, VOID_ELEMENTS, parseHtml } from "./html.service";
-
-const client = new Anthropic();
 
 export function serializeTags(tags: Tag[]): string {
     return tags.map(serializeTag).join('');
@@ -21,32 +18,32 @@ function serializeTag(tag: Tag): string {
     return `${opening}${body}</${tag.tagName}>`;
 }
 
-export async function restructureTags(tags: Tag[]): Promise<Tag[]> {
-    const html = serializeTags(tags);
+const HEAD_ONLY_TAGS = new Set(['title', 'base', 'meta', 'link', 'style', 'script']);
 
-    const response = await client.messages.create({
-        model: 'claude-opus-4-6',
-        max_tokens: 8096,
-        messages: [{
-            role: 'user',
-            content: `Restructure the following HTML so that:
-1. There is exactly one root <html> element.
-2. <html> contains only <head> and <body> as direct children.
-3. Metadata tags (title, meta, link, style, script) are placed inside <head>.
-4. All content tags are placed inside <body>.
-5. Every unclosed non-void tag is properly closed.
-6. Every self-closing non-void tag (e.g. <div/>) is rewritten as an open+close pair.
-7. Void elements (br, img, input, meta, link, etc.) are NOT self-closed.
+function flattenTags(tags: Tag[]): Tag[] {
+    return tags.flatMap(tag => [
+        tag,
+        ...flattenTags(tag.content.filter((c): c is Tag => typeof c !== 'string'))
+    ]);
+}
 
-Return ONLY the restructured HTML — no explanation, no markdown fences.
+export function validateTagsStructure(tags: Tag[]): boolean {
+    // Exactly one root <html> element
+    if (tags.length > 1) return false;
+    const htmltags = tags.filter(t => t.tagName === 'html');
+    if (htmltags.length !== 1) return false;
 
-HTML:
-${html}`
-        }]
-    });
+    // No tag errors anywhere in the document
+    if (flattenTags(tags).some(t => t.error !== null)) return false;
 
-    const content = response.content[0];
-    if (content?.type !== 'text') throw new Error('Unexpected response type from Claude');
+    const childTags = htmltags[0]!.content.filter((c): c is Tag => typeof c !== 'string');
 
-    return parseHtml(content.text);
+    // <html> direct children are only <head> and <body>
+    if (childTags.some(t => t.tagName !== 'head' && t.tagName !== 'body')) return false;
+
+    // Head-only tags are not inside <body>
+    const bodyTag = childTags.find(t => t.tagName === 'body');
+    if (bodyTag && flattenTags([bodyTag]).some(t => HEAD_ONLY_TAGS.has(t.tagName))) return false;
+
+    return true;
 }

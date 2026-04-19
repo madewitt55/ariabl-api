@@ -6,4 +6,18 @@ export const parseHtmlSchema = object({
     }).strict()
 });
 
+export const restructureHtmlSchema = object({
+    body: object({
+        html: string('html is required').min(1)
+    }).strict()
+});
+
+export const validateHtmlStructureSchema = object({
+    body: object({
+        html: string('html is required').min(1)
+    }).strict()
+});
+
 export type ParseHtmlRequest = z.infer<typeof parseHtmlSchema>;
+export type restructureHtmlRequest = z.infer<typeof restructureHtmlSchema>;
+export type validateHtmlStructureRequest = z.infer<typeof validateHtmlStructureSchema>;

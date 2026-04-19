@@ -1,4 +1,7 @@
 import { Parser } from 'htmlparser2';
+import Anthropic from '@anthropic-ai/sdk';
+
+const client = new Anthropic();
 
 // Void elements can not have children and only consist of an open tag
 export const VOID_ELEMENTS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
@@ -75,4 +78,34 @@ export function parseHtml(html: string): Tag[] {
     parser.end();
 
     return roots;
+}
+
+export async function restructureHtml(html: string): Promise<string> {
+    const response = await client.messages.create({
+        model: 'claude-opus-4-6',
+        max_tokens: 8096,
+        messages: [{
+            role: 'user',
+            content: `Restructure the following HTML so that:
+1. '<!DOCTYPE html>' is present at the top.
+2. There is exactly one root element that is <html>.
+3. <html> contains only <head> and <body> as direct children.
+4. Metadata tags (title, meta, link, style, script) are placed inside <head>.
+5. All content tags are placed inside <body>.
+6. Every unclosed non-void tag is properly closed.
+7. Every self-closing non-void tag (e.g. <div/>) is rewritten as an open+close pair.
+8. Void elements (br, img, input, meta, link, etc.) are ALWAYS self-closed.
+9. The document uses proper whitespace for readability.
+
+Return ONLY the restructured HTML — no explanation, no markdown fences.
+
+HTML:
+${html}`
+        }]
+    });
+
+    const content = response.content[0];
+    if (content?.type !== 'text') throw new Error('Unexpected response type from Claude');
+
+    return content.text;
 }

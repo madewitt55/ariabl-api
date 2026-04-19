@@ -29,11 +29,4 @@ export const serializeTagsSchema = object({
     }).strict()
 });
 
-export const restructureTagsSchema = object({
-    body: object({
-        tags: array(tagSchema).min(1)
-    }).strict()
-});
-
 export type SerializeTagsRequest = z.infer<typeof serializeTagsSchema>;
-export type restructureTagsRequest = z.infer<typeof restructureTagsSchema>;
