@@ -1,7 +1,7 @@
 import type { Response } from 'express';
 import type { TypedRequest } from '../utils/typed_request';
-import type { ParseHtmlRequest, restructureHtmlRequest, validateHtmlStructureRequest } from '../schema/html.schema';
-import { parseHtml, restructureHtml, type Tag } from '../services/html.service';
+import type { ParseHtmlRequest, restructureHtmlRequest, validateHtmlStructureRequest, AccessibilityCheckRequest } from '../schema/html.schema';
+import { parseHtml, restructureHtml, checkImageAlt, checkFormLabels, checkHeadings, checkLandmarks, type Tag } from '../services/html.service';
 import { validateTagsStructure } from '../services/tag.service';
 
 /**
@@ -53,6 +53,86 @@ export async function restructureHtmlHandler(req: TypedRequest<restructureHtmlRe
         return res.status(500).send({
             message: 'Internal error occured while restructuring HTML'
         });
+    }
+}
+
+export async function checkImageAltHandler(req: TypedRequest<AccessibilityCheckRequest>, res: Response): Promise<any> {
+    try {
+        const html: string = req.body.html;
+        const tags: Tag[] = parseHtml(html);
+
+        // HTML has no tags
+        if (!tags.length) {
+            return res.status(400).send({
+                message: 'HTML contains no tags'
+            });
+        }
+        
+        const updatedHtml: string = await checkImageAlt(html);
+        return res.status(200).send({
+            html: updatedHtml,
+            message: 'Image alt text updated successfully'
+        });
+    }
+    catch (err: any) {
+        console.log(err);
+        return res.status(500).send({
+            message: 'Internal error occurred while checking image alt text'
+        });
+    }
+}
+
+export async function checkFormLabelsHandler(req: TypedRequest<AccessibilityCheckRequest>, res: Response): Promise<any> {
+    try {
+        const html: string = req.body.html;
+        const tags: Tag[] = parseHtml(html);
+
+        if (!tags.length) {
+            return res.status(400).send({ message: 'HTML contains no tags' });
+        }
+
+        const updatedHtml: string = await checkFormLabels(html);
+        return res.status(200).send({ html: updatedHtml, message: 'Form labels updated successfully' });
+    }
+    catch (err: any) {
+        console.log(err);
+        return res.status(500).send({ message: 'Internal error occurred while checking form labels' });
+    }
+}
+
+export async function checkHeadingsHandler(req: TypedRequest<AccessibilityCheckRequest>, res: Response): Promise<any> {
+    try {
+        const html: string = req.body.html;
+        const tags: Tag[] = parseHtml(html);
+
+        if (!tags.length) {
+            return res.status(400).send({ message: 'HTML contains no tags' });
+        }
+
+        const updatedHtml: string = await checkHeadings(html);
+        return res.status(200).send({ html: updatedHtml, message: 'Heading hierarchy updated successfully' });
+    }
+    catch (err: any) {
+        console.log(err);
+        return res.status(500).send({ message: 'Internal error occurred while checking headings' });
+    }
+}
+
+export async function checkLandmarksHandler(req: TypedRequest<AccessibilityCheckRequest>, res: Response): Promise<any> {
+    try {
+        const html: string = req.body.html;
+        const tags: Tag[] = parseHtml(html);
+
+        if (!tags.length) {
+            return res.status(400).send({ message: 'HTML contains no tags' });
+        }
+
+        const updatedHtml: string = await checkLandmarks(html);
+        return res.status(200).send({ html: updatedHtml, message: 'Landmark roles updated successfully' });
+    }
+    catch (err: any) {
+        console.log(err);
+        return res.status(500).send({ message: 'Internal error occurred while checking landmarks' });
     }
 }
 

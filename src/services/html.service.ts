@@ -80,9 +80,120 @@ export function parseHtml(html: string): Tag[] {
     return roots;
 }
 
-export async function restructureHtml(html: string): Promise<string> {
+export async function checkImageAlt(html: string): Promise<string> {
     const response = await client.messages.create({
         model: 'claude-opus-4-6',
+        max_tokens: 8096,
+        messages: [{
+            role: 'user',
+            content: `You are an HTML accessibility expert. Your task is to add or fix alt attributes on <img> tags.
+
+For each <img> tag that is missing an alt attribute or has an empty alt attribute (alt=""):
+1. Read the surrounding context: nearby headings, paragraphs, figure captions, and the image src filename.
+2. Write a concise, descriptive alt string (under 125 characters) that conveys the meaning or purpose of the image.
+3. If the image is purely decorative (spacer, background flourish, icon with adjacent visible label), keep alt="".
+4. Do NOT change any other attributes or any other part of the HTML.
+
+Return ONLY the modified HTML — no explanation, no markdown fences.
+
+HTML:
+${html}`
+        }]
+    });
+
+    const content = response.content[0];
+    if (content?.type !== 'text') throw new Error('Unexpected response type from Claude');
+
+    return content.text;
+}
+
+export async function checkFormLabels(html: string): Promise<string> {
+    const response = await client.messages.create({
+        model: 'claude-opus-4-6',
+        max_tokens: 8096,
+        messages: [{
+            role: 'user',
+            content: `You are an HTML accessibility expert. Your task is to fix form label accessibility.
+
+For each <input>, <select>, and <textarea> that has no associated <label> (via for/id pairing or wrapping element), no aria-label, and no aria-labelledby:
+1. Infer appropriate label text from surrounding text, placeholder, name attribute, or field context.
+2. Either wrap the element in a <label> or add an aria-label attribute — prefer wrapping with <label> when there is no visible label text nearby, and aria-label when there is.
+3. For inputs with the required attribute that are missing aria-required="true", add it.
+4. Do NOT change anything else in the HTML.
+
+Return ONLY the modified HTML — no explanation, no markdown fences.
+
+HTML:
+${html}`
+        }]
+    });
+
+    const content = response.content[0];
+    if (content?.type !== 'text') throw new Error('Unexpected response type from Claude');
+
+    return content.text;
+}
+
+export async function checkHeadings(html: string): Promise<string> {
+    const response = await client.messages.create({
+        model: 'claude-opus-4-6',
+        max_tokens: 8096,
+        messages: [{
+            role: 'user',
+            content: `You are an HTML accessibility expert. Your task is to fix heading hierarchy.
+
+Inspect all heading elements (h1–h6) and correct the hierarchy so that:
+1. There is exactly one <h1> representing the main page title.
+2. Heading levels are sequential with no skipped levels (e.g. h1 → h2 → h3, never h1 → h3).
+3. Heading levels reflect the document's outline — promote or demote headings as needed to form a logical structure.
+4. Do NOT change the text content of any heading or any other part of the HTML.
+
+Return ONLY the modified HTML — no explanation, no markdown fences.
+
+HTML:
+${html}`
+        }]
+    });
+
+    const content = response.content[0];
+    if (content?.type !== 'text') throw new Error('Unexpected response type from Claude');
+
+    return content.text;
+}
+
+export async function checkLandmarks(html: string): Promise<string> {
+    const response = await client.messages.create({
+        model: 'claude-opus-4-6',
+        max_tokens: 8096,
+        messages: [{
+            role: 'user',
+            content: `You are an HTML accessibility expert. Your task is to add ARIA landmark roles.
+
+Analyse the document structure and:
+1. Ensure a <main> element (or role="main") wraps the primary content.
+2. Ensure navigation blocks use <nav> or role="navigation".
+3. Ensure the page header uses <header> or role="banner".
+4. Ensure the page footer uses <footer> or role="contentinfo".
+5. Convert generic <div> or <span> wrappers to the appropriate semantic HTML5 element where the intent is clear from class names, ids, or content.
+6. Where two or more landmarks of the same type exist, add a distinct aria-label to each.
+7. Do NOT change any content, text, or other attributes beyond what is necessary.
+
+Return ONLY the modified HTML — no explanation, no markdown fences.
+
+HTML:
+${html}`
+        }]
+    });
+
+    const content = response.content[0];
+    if (content?.type !== 'text') throw new Error('Unexpected response type from Claude');
+
+    return content.text;
+}
+
+export async function restructureHtml(html: string): Promise<string> {
+    const response = await client.messages.create({
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 8096,
         messages: [{
             role: 'user',
